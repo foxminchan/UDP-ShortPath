@@ -3,9 +3,7 @@ package client;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionListener;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.*;
 
 public class JMain {
     private JTextField txtColumn;
@@ -20,13 +18,13 @@ public class JMain {
         ActionListener listener = e -> {
             try {
                 if (txtColumn.getText().isEmpty() || txtRow.getText().isEmpty()) {
-                    JOptionPane.showMessageDialog(null, "Vui lòng nhập đầy đủ thông tin");
+                    JOptionPane.showMessageDialog(null, "Lỗi: Vui lòng nhập đầy đủ thông tin");
                     return;
                 }
                 int row = Integer.parseInt(txtRow.getText());
                 int col = Integer.parseInt(txtColumn.getText());
                 if (row <= 0 || col <= 0 || col > 30 || row > 30) {
-                    JOptionPane.showMessageDialog(null, "Vui lòng nhập số dương nhỏ hơn 30");
+                    JOptionPane.showMessageDialog(null, "Lỗi: Vui lòng nhập số dương nhỏ hơn 30");
                     return;
                 }
                 DefaultTableModel model = new DefaultTableModel(row, col);
@@ -36,9 +34,14 @@ public class JMain {
             }
         };
         txtColumn.addActionListener(listener);
+        txtColumn.requestFocus();
         txtRow.addActionListener(listener);
 
         btnFindShortWay.addActionListener(e -> {
+            if (tblData.getModel().getRowCount() == 0) {
+                JOptionPane.showMessageDialog(null, "Lỗi: Vui lòng khởi tạo ma trận");
+                return;
+            }
             try {
                 int row = Integer.parseInt(txtRow.getText());
                 int col = Integer.parseInt(txtColumn.getText());
@@ -46,7 +49,7 @@ public class JMain {
                 for (int i = 0; i < row; i++) {
                     for (int j = 0; j < col; j++) {
                         if (tblData.getValueAt(i, j) == null) {
-                            JOptionPane.showMessageDialog(null, "Vui lòng nhập đầy đủ thông tin");
+                            JOptionPane.showMessageDialog(null, "Lỗi: Vui lòng nhập đầy đủ thông tin");
                             return;
                         }
                         data[i][j] = Integer.parseInt(tblData.getValueAt(i, j).toString());
@@ -59,11 +62,10 @@ public class JMain {
                 JOptionPane.showMessageDialog(null, "Lỗi: Kiểu dữ liệu không trùng khớp");
             }
         });
-
     }
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("JMain");
+        JFrame frame = new JFrame("Tìm đường đi ngắn nhất");
         frame.setContentPane(new JMain().frmMain);
         frame.setSize(500, 500);
         frame.setLocationRelativeTo(null);
@@ -88,14 +90,13 @@ public class JMain {
             clientSocket.send(sendPacket);
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
             clientSocket.receive(receivePacket);
-            String modifiedSentence = new String(receivePacket.getData());
+            String modifiedSentence = new String(receivePacket.getData(), 0, receivePacket.getLength());
             String[] result = modifiedSentence.split(" ");
             txtWeighted.setText(result[0]);
-            for (int i = 1; i < result.length; i++) {
-                txtShortPath.setText(result[i]);
-            }
+            String modifiedPath = new String(receivePacket.getData(), 0, receivePacket.getLength());
+            txtShortPath.setText(modifiedPath.substring(modifiedPath.indexOf(" ") + 1));
         } catch (Exception e) {
-            System.out.println("Socket: " + e.getMessage());
+            System.out.println("server.Server: " + e.getMessage());
         }
     }
 }
